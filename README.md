@@ -267,7 +267,8 @@ The deep learning analysis detects patterns indicating that the image is likely 
 ### 🔍 Manipulation Localization
 
 ![Manipulation Localization](Screenshots/Screenshot%20From%202026-08-25%2018-22-17.png)
-
+### 🧠 ChatBot explained
+![chatbot](Screenshots/Screenshot%20From%202026-08-25%2018-23-53.png)
 ### 🤖 AI Detection Result
 
 ![AI Detection](Screenshots/Screenshot%20From%202026-08-25%2018-29-51.png)
@@ -276,6 +277,9 @@ The deep learning analysis detects patterns indicating that the image is likely 
 
 ![Analysis Chatbot](Screenshots/Screenshot%20From%202026-08-25%2018-33-11.png)
 
+### Authentic Image
+![Authentic Image](Screenshots/Screenshot%20From%202026-08-25%2018-35-36.png)
+![ Chatbot](Screenshots/Screenshot%20From%202026-08-25%2018-37-59.png)
 ---
 
 ## Installation
