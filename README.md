@@ -405,23 +405,28 @@ http://127.0.0.1:9000/
 ## Project Structure
 
 ```text
-image-authentication-system/
-│
-├── config/                 # Django project configuration
-├── authentication/         # User authentication and account management
-├── analysis/               # Image analysis functionality
-├── ai_models/              # AI model integration
-├── forensic_engine/        # Digital forensic analysis
-├── chatbot/                # Analysis explanation chatbot
-├── templates/              # HTML templates
-├── static/                 # CSS, JavaScript and static files
-├── media/                  # Uploaded images and generated analysis files
-├── screenshots/            # Application screenshots
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── manage.py
-└── README.md
+├── README.md
+├── imageAuthentication
+│   ├── authenticate  [19 entries exceeds filelimit, not opening dir]
+│   ├── db.sqlite3
+│   ├── db2.sqlite3
+│   ├── imageAuthentication
+│   │   ├── __init__.py
+│   │   ├── __pycache__  [7 entries exceeds filelimit, not opening dir]
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   ├── manage.py
+│   └── media
+│       ├── db.sqlite3
+│       ├── outputs  [837 entries exceeds filelimit, not opening dir]
+│       ├── reports  [28 entries exceeds filelimit, not opening dir]
+│       └── uploads  [253 entries exceeds filelimit, not opening dir]
+├── photoholmes
+│   └── src
+│       └── photoholmes
+│           ├── __init__.py
+└── requirements.txt
+
 ```
 
 > Update this structure to match your actual project files before publishing.
