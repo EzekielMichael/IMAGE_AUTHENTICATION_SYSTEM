@@ -8,6 +8,7 @@ import gc, time
 from django.db.models import Q
 from django.utils import timezone
 import torch
+from pathlib import Path
 import torch.nn.functional as F
 from PIL import Image
 from torch import nn
@@ -57,9 +58,13 @@ YELLOW_COLOR = '\033[93m'  # Yellow text
 END_COLOR = '\033[0m'
 
 # ====================== LOAD MODELS ONCE ======================
-# These will load when Django starts and persist
+BASE_DIR = Path(__file__).resolve().parent
+IMAGE_MODELS_DIR = BASE_DIR / "Image_models"
+
+# 2. Path for TruFor model weights
+trufor_weights_path = IMAGE_MODELS_DIR / "Localization.pth.tar"
 Human_Edit_model = TruFor(
-    weights="/home/profeze/Desktop/FYP/IMAGE_AUTHENTICATION/Image_models/Localization.pth.tar",
+    weights=str(trufor_weights_path),
     device="cpu"
 )
 Human_Edit_model.eval()
@@ -78,8 +83,9 @@ ai_model.fc = nn.Sequential(
 
 print(f"{YELLOW_COLOR}Loading AI detection Model... {END_COLOR}")
 # Load the trained weights
-checkpoint = torch.load("/home/profeze/Desktop/FYP/IMAGE_AUTHENTICATION/Image_models/best_resnet50_ai_detector_Eze_04.pth", map_location=DEVICE)
-# checkpoint = torch.load("/home/profeze/Desktop/FYP/IMAGE_AUTHENTICATION/Image_models/Retrained_Model.pth", map_location=DEVICE)
+# 1. Path for PyTorch checkpoint
+resnet_path = IMAGE_MODELS_DIR / "best_resnet50_ai_detector_Eze_04.pth"
+checkpoint = torch.load(str(resnet_path), map_location=DEVICE)
 
 # Load state dict
 ai_model.load_state_dict(checkpoint)
