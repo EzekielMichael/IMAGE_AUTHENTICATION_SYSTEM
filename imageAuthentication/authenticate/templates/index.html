@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hashid_tags %}
+
+{% block title %}Forensix - Upload & Analyze{% endblock %}
+
+{% block extra_css %}
+<style>
+  .upload-zone {
+    transition: all 0.3s ease;
+  }
+  .upload-zone:hover {
+    background-color: #1e2a44;
+    border-color: #00E5CC;
+  }
+  
+  body.light-mode .upload-zone {
+    background-color: #f9fafb;
+  }
+  
+  body.light-mode .upload-zone:hover {
+    background-color: #f3f4f6;
+    border-color: #00E5CC;
+  }
+  
+  .preview-img {
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Light mode specific styles */
+  body.light-mode .bg-\[\#13223a\] {
+    background-color: #ffffff;
+  }
+  
+  body.light-mode .bg-\[\#0f1c2e\] {
+    background-color: #f9fafb;
+  }
+  
+  body.light-mode .border-gray-600 {
+    border-color: #d1d5db;
+  }
+  
+  body.light-mode .text-gray-400 {
+    color: #6b7280;
+  }
+  
+  body.light-mode .text-gray-500 {
+    color: #9ca3af;
+  }
+  
+  body.light-mode .bg-emerald-600\/30 {
+    background-color: rgba(5, 150, 105, 0.1);
+  }
+  
+  body.light-mode .bg-blue-600\/30 {
+    background-color: rgba(37, 99, 235, 0.1);
+  }
+  
+  body.light-mode .bg-red-500 {
+    background-color: #ef4444;
+  }
+  
+  body.light-mode .bg-emerald-500 {
+    background-color: #10b981;
+  }
+  
+  body.light-mode .image-card {
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  body.light-mode .text-white {
+    color: #1f2937;
+  }
+  
+  body.light-mode .text-gray-300 {
+    color: #6b7280;
+  }
+  
+  body.light-mode .bg-black\/80 {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  body.light-mode .bg-black\/80 .text-white {
+    color: #1f2937;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+  <!-- LEFT: Upload Section -->
+  <div class="lg:col-span-7">
+    <div class="bg-[#13223a] rounded-3xl p-10 light-mode:bg-white light-mode:shadow-lg">
+      <div class="text-center mb-10">
+        <h2 class="text-4xl font-bold mb-3 text-white light-mode:text-gray-900">Upload Image for Analysis</h2>
+        <p class="text-gray-400 light-mode:text-gray-600 text-lg max-w-md mx-auto">
+          Detect AI-generated content, human edits, metadata tampering, and get a final authenticity verdict.
+        </p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" id="uploadForm" class="space-y-8">
+        {% csrf_token %}
+
+        <!-- Drag & Drop Upload Zone -->
+        <div id="dropZone" 
+             class="upload-zone border-3 border-dashed border-gray-600 hover:border-teal-500 rounded-3xl p-16 text-center cursor-pointer bg-[#0f1c2e] light-mode:bg-gray-50 light-mode:border-gray-300">
+          <i class="fas fa-cloud-upload-alt text-7xl text-teal-400 mb-6"></i>
+          <p class="text-2xl font-medium mb-2 text-white light-mode:text-gray-900">Drop your image here</p>
+          <p class="text-gray-400 light-mode:text-gray-600 mb-6">or</p>
+          
+          <label for="imageInput" 
+                 class="inline-block bg-teal-500 hover:bg-teal-600 text-white px-10 py-4 rounded-2xl font-semibold cursor-pointer transition">
+            <i class="fas fa-folder-open mr-2"></i> Browse Files
+          </label>
+          
+          <input type="file" name="image" id="imageInput" accept="image/*" required class="hidden">
+        </div>
+
+        <!-- Image Preview -->
+        <div id="previewContainer" class="hidden">
+          <div class="flex justify-center">
+            <img id="preview" class="preview-img" alt="Preview">
+          </div>
+          <div class="text-center mt-4">
+            <button type="button" onclick="removePreview()" 
+                    class="text-red-400 hover:text-red-500 text-sm flex items-center gap-2 mx-auto">
+              <i class="fas fa-trash"></i> Remove Image
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" 
+                class="w-full bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 py-6 rounded-3xl text-xl font-bold shadow-2xl flex items-center justify-center gap-3 transition-all duration-300 text-white">
+          <i class="fas fa-bolt"></i>
+          UPLOAD & START ANALYSIS
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIGHT: What We Analyze -->
+  <div class="lg:col-span-5 space-y-8">
+    <div class="bg-[#13223a] rounded-3xl p-8 light-mode:bg-white light-mode:shadow-lg">
+      <h3 class="text-xl font-semibold mb-6 flex items-center gap-3 text-white light-mode:text-gray-900">
+        <i class="fas fa-shield-alt text-teal-400"></i> What We Analyze
+      </h3>
+      <div class="grid grid-cols-2 gap-6 text-sm">
+        <div class="flex gap-3">
+          <i class="fas fa-robot text-orange-400 text-2xl"></i>
+          <div>
+            <p class="font-medium text-white light-mode:text-gray-900">AI Generation</p>
+            <p class="text-gray-400 light-mode:text-gray-600 text-xs">ResNet50 Detection</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <i class="fas fa-fire text-red-400 text-2xl"></i>
+          <div>
+            <p class="font-medium text-white light-mode:text-gray-900">Manipulation Heatmap</p>
+            <p class="text-gray-400 light-mode:text-gray-600 text-xs">Locating Edited Area</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <i class="fas fa-edit text-yellow-400 text-2xl"></i>
+          <div>
+            <p class="font-medium text-white light-mode:text-gray-900">Human Editing</p>
+            <p class="text-gray-400 light-mode:text-gray-600 text-xs">Post-processing detection</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <i class="fas fa-file-alt text-blue-400 text-2xl"></i>
+          <div>
+            <p class="font-medium text-white light-mode:text-gray-900">Metadata & EXIF</p>
+            <p class="text-gray-400 light-mode:text-gray-600 text-xs">C2PA & tampering check</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      {% if messages %}
+      {% for message in messages %}
+        <div class="p-4 rounded-2xl text-center text-sm {% if 'error' in message.tags %}bg-red-500 light-mode:bg-red-500{% else %}bg-emerald-500 light-mode:bg-emerald-500{% endif %} text-white">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Uploads - ONLY VISIBLE WHEN LOGGED IN -->
+{% if user.is_authenticated and images and images|length > 0 %}
+  <div class="mt-16">
+      <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl font-semibold flex items-center gap-3 text-white light-mode:text-gray-900">
+              <i class="fas fa-history text-teal-400"></i> Recent Uploads
+          </h2>
+          <a href="{% url 'all_images' %}" 
+            class="text-teal-400 hover:text-teal-300 font-medium flex items-center gap-2">
+              View All Images <i class="fas fa-arrow-right"></i>
+          </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {% for img in images %}
+          <div class="image-card bg-[#13223a] rounded-3xl overflow-hidden light-mode:bg-white light-mode:shadow-lg">
+              <a href="{% url 'image_detail' img.id|hashid %}">
+                  <div class="relative">
+                      <img src="{{ img.image.url }}" 
+                          class="w-full h-64 object-cover" 
+                          alt="{{ img.filename }}">
+                      
+                      {% with verdict=img.final_verdict.first %}
+                      <div class="absolute top-4 right-4 px-4 py-1 text-xs font-bold rounded-2xl backdrop-blur-sm
+                          {% if not verdict %}
+                              bg-gray-600/90
+                          {% elif 'AUTHENTIC' in verdict.verdict|upper %}
+                              bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/30
+                          {% elif 'AI' in verdict.verdict|upper or 'GENERATED' in verdict.verdict|upper %}
+                              bg-gradient-to-r from-red-500 to-rose-600 shadow-lg shadow-red-500/30
+                          {% elif 'EDITED' in verdict.verdict|upper or 'MANIPULATED' in verdict.verdict|upper %}
+                              bg-gradient-to-r from-orange-500 to-amber-600 shadow-lg shadow-orange-500/30
+                          {% else %}
+                              bg-gradient-to-r from-purple-500 to-pink-600 shadow-lg shadow-purple-500/30
+                          {% endif %}">
+                          
+                          <i class="fas 
+                              {% if not verdict %}
+                                  fa-hourglass-half
+                              {% elif 'AUTHENTIC' in verdict.verdict|upper %}
+                                  fa-shield-alt
+                              {% elif 'AI' in verdict.verdict|upper or 'GENERATED' in verdict.verdict|upper %}
+                                  fa-robot
+                              {% elif 'EDITED' in verdict.verdict|upper or 'MANIPULATED' in verdict.verdict|upper %}
+                                  fa-pencil-alt
+                              {% else %}
+                                  fa-question-circle
+                              {% endif %} mr-1"></i>
+                          
+                          {% if verdict %}
+                              {{ verdict.verdict }}
+                          {% else %}
+                              <span class="flex items-center gap-1">
+                                  <i class="fas fa-spinner fa-pulse"></i> Not Analyzed
+                              </span>
+                          {% endif %}
+                      </div>
+                      {% endwith %}
+                      
+                      <!-- AI and Human Edit Detection Scores -->
+                      <div class="absolute bottom-4 left-4 right-4 flex gap-2">
+                          {% if img.ai_confidence_percentage %}
+                              <div class="bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-semibold light-mode:bg-white/90">
+                                  <span class="text-red-400"><i class="fas fa-microchip"></i> AI:</span>
+                                  <span class="text-white light-mode:text-gray-900">{{ img.ai_confidence_percentage|floatformat:1 }}%</span>
+                              </div>
+                          {% endif %}
+
+                          {% if img.human_edit_percentage %}
+                              <div class="bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-semibold light-mode:bg-white/90">
+                                  <span class="text-orange-400"><i class="fas fa-user-edit"></i> Edit:</span>
+                                  <span class="text-white light-mode:text-gray-900">{{ img.human_edit_percentage|floatformat:1 }}%</span>
+                              </div>
+                          {% endif %}
+                          
+                          {% if not img.ai_confidence_percentage and not img.human_edit_percentage %}
+                              <div class="bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs light-mode:bg-white/90">
+                                  <i class="fas fa-hourglass-half text-yellow-400"></i>
+                                  <span class="text-gray-300 light-mode:text-gray-600 ml-1">Pending</span>
+                              </div>
+                          {% endif %}
+                      </div>
+                  </div>
+              </a>
+              
+              <div class="p-6">
+                  <p class="font-semibold truncate text-lg text-white light-mode:text-gray-900" title="{{ img.filename }}">{{ img.filename|truncatechars:30 }}</p>
+                  <p class="text-xs text-gray-400 light-mode:text-gray-600 mt-1">
+                      <i class="far fa-calendar-alt mr-1"></i> Uploaded {{ img.uploaded_at|timesince }} ago
+                  </p>
+                  
+                  <div class="mt-5 flex justify-between items-center">
+                      <a href="{% url 'image_detail' img.id|hashid %}" 
+                        class="text-teal-400 hover:text-teal-300 font-medium flex items-center gap-2 text-sm transition">
+                          <i class="fas fa-chart-bar"></i> View Analysis
+                      </a>
+                      
+                      {% with has_analysis=img.final_verdict.first %}
+                        {% if has_analysis %}
+                            <a href="{% url 'image_detail' img.id|hashid %}" 
+                              class="bg-emerald-600/90 hover:bg-emerald-600/50 text-emerald-300 light-mode:bg-emerald-100 light-mode:text-emerald-700 light-mode:hover:bg-emerald-200 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i> Analyzed
+                            </a>
+                        {% else %}
+                            <a href="{% url 'run_analysis' img.id|hashid %}" 
+                              class="bg-blue-600/90 hover:bg-blue-600/50 text-blue-300 light-mode:bg-blue-100 light-mode:text-blue-700 light-mode:hover:bg-blue-200 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                                <i class="fas fa-sync-alt"></i> Analyze
+                            </a>
+                        {% endif %}
+                      {% endwith %}
+                  </div>
+              </div>
+          </div>
+          {% empty %}
+          <div class="col-span-full text-center py-12">
+              <i class="fas fa-upload text-6xl text-gray-600 mb-4"></i>
+              <p class="text-gray-400 light-mode:text-gray-600">No images uploaded yet</p>
+              <p class="text-sm text-gray-500 light-mode:text-gray-500 mt-2">Upload your first image to get started</p>
+          </div>
+          {% endfor %}
+      </div>
+  </div>
+{% elif user.is_authenticated %}
+<div class="mt-16 bg-[#13223a] rounded-3xl p-12 text-center light-mode:bg-white light-mode:shadow-lg">
+  <i class="fas fa-image text-6xl text-gray-500 mb-4"></i>
+  <p class="text-gray-400 light-mode:text-gray-600">No images uploaded yet.<br>Upload your first image above to begin analysis.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Drag & Drop + Preview Logic
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('imageInput');
+  const previewContainer = document.getElementById('previewContainer');
+  const previewImg = document.getElementById('preview');
+
+  dropZone.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'LABEL') {
+      fileInput.click();
+    }
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-teal-500', 'bg-[#1e2a44]');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-teal-500', 'bg-[#1e2a44]');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-teal-500', 'bg-[#1e2a44]');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      fileInput.files = e.dataTransfer.files;
+      showPreview(file);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) showPreview(file);
+  });
+
+  function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      previewImg.src = e.target.result;
+      previewContainer.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removePreview() {
+    previewContainer.classList.add('hidden');
+    fileInput.value = '';
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hashid_tags %}
+
+{% block title %}Shared Reports - Forensix{% endblock %}
+
+{% block extra_css %}
+<style>
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-white">Shared Reports</h1>
+    <p class="text-gray-400 mt-1">Reports shared by other users ({{ total_count }})</p>
+  </div>
+  
+  {% if reports %}
+    <div class="space-y-4">
+      {% for report in reports %}
+        <div class="bg-[#13223a] rounded-2xl p-6">
+          <div class="flex items-start justify-between flex-wrap gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-share-alt text-teal-400"></i>
+                <span class="text-white font-semibold">{{ report.image.filename|truncatechars:40 }}</span>
+                <span class="bg-gray-600 text-xs px-2 py-0.5 rounded-full text-white">
+                  Shared by {{ report.generated_by.get_full_name|default:report.generated_by.username }}
+                </span>
+              </div>
+              
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-gray-400">Verdict</span>
+                  <p class="text-white">{{ report.verdict_snapshot|default:"N/A" }}</p>
+                </div>
+                <div>
+                  <span class="text-gray-400">AI Score</span>
+                  <p class="text-white">{{ report.ai_score_snapshot }}%</p>
+                </div>
+                <div>
+                  <span class="text-gray-400">Edit Score</span>
+                  <p class="text-white">{{ report.human_score_snapshot }}%</p>
+                </div>
+                <div>
+                  <span class="text-gray-400">Shared</span>
+                  <p class="text-white text-xs">
+                    <i class="far fa-calendar-alt"></i> {{ report.shared_at|date:"M d, Y" }}
+                    <br>
+                    <i class="fas fa-eye"></i> {{ report.view_count }} views
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="viewSharedReport('{{ report.share_token }}', this)" 
+                      class="view-pdf-btn px-4 py-2 bg-teal-700 hover:bg-teal-600 text-white rounded-xl text-sm transition">
+                <i class="fas fa-eye"></i> View Report
+              </button>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-[#13223a] rounded-3xl p-12 text-center">
+      <i class="fas fa-share-alt text-6xl text-gray-600 mb-4"></i>
+      <h3 class="text-xl font-semibold text-white mb-2">No Shared Reports Yet</h3>
+      <p class="text-gray-400">When other users share their reports, they will appear here</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- PDF Viewer Container (embedded) -->
+<div id="pdfViewerContainer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column;">
+  <div style="background: #13223a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #00E5CC;">
+    <div class="flex items-center gap-3">
+      <i class="fas fa-file-pdf text-teal-400 text-xl"></i>
+      <span class="text-white font-semibold">Shared PDF Report Viewer</span>
+    </div>
+    <button onclick="closePDFViewer()" class="text-gray-400 hover:text-white text-2xl transition">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <iframe id="pdfViewer" style="flex: 1; width: 100%; border: none; background: white;"></iframe>
+</div>
+
+<!-- PDF Loader -->
+<div id="pdfLoader" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #13223a; padding: 30px; border-radius: 20px; text-align: center; z-index: 10001; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);">
+  <i class="fas fa-spinner fa-spin text-4xl text-teal-400 mb-4"></i>
+  <p class="text-white">Loading PDF...</p>
+</div>
+
+<script>
+function viewSharedReport(shareToken, element) {
+  // Remove active class from all view buttons
+  document.querySelectorAll('.view-pdf-btn').forEach(btn => {
+    btn.classList.remove('bg-teal-500');
+    btn.classList.add('bg-teal-700');
+  });
+  
+  // Add active class to clicked button
+  element.classList.remove('bg-teal-700');
+  element.classList.add('bg-teal-500');
+  
+  // Show loading indicator
+  showPDFLoader();
+  
+  // Fetch the shared PDF
+  fetch(`/report/shared/${shareToken}/`, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to load report');
+    }
+    return response.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const iframe = document.getElementById('pdfViewer');
+    iframe.src = url;
+    
+    // Show the container
+    document.getElementById('pdfViewerContainer').style.display = 'flex';
+    hidePDFLoader();
+    
+    // Increment view count (optional - can be done via AJAX)
+    fetch(`/report/shared/${shareToken}/view/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    }).catch(e => console.log('View count updated'));
+  })
+  .catch(error => {
+    console.error('Error loading PDF:', error);
+    hidePDFLoader();
+    showToast('Error loading report', 'error');
+  });
+}
+
+function closePDFViewer() {
+  const container = document.getElementById('pdfViewerContainer');
+  container.style.display = 'none';
+  const iframe = document.getElementById('pdfViewer');
+  iframe.src = '';
+  
+  // Reset view buttons
+  document.querySelectorAll('.view-pdf-btn').forEach(btn => {
+    btn.classList.remove('bg-teal-500');
+    btn.classList.add('bg-teal-700');
+  });
+}
+
+function showPDFLoader() {
+  document.getElementById('pdfLoader').style.display = 'block';
+}
+
+function hidePDFLoader() {
+  document.getElementById('pdfLoader').style.display = 'none';
+}
+
+function showToast(message, type) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${type === 'error' ? '#ef4444' : '#10b981'};
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    z-index: 10002;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  `;
+  toast.innerText = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+function getCookie(name) {
+  let value = `; ${document.cookie}`;
+  let parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// Close PDF viewer with ESC key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closePDFViewer();
+  }
+});
+</script>
+{% endblock %}

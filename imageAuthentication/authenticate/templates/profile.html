@@ -1,0 +1,705 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hashid_tags %}
+{% block title %}Profile - Forensix{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-header-gradient {
+    background: linear-gradient(135deg, #0F1A2E 0%, #1A2C4A 100%);
+  }
+  
+  body.light-mode .profile-header-gradient {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  }
+  
+  .avatar-initials {
+    background: linear-gradient(135deg, #00E5CC, #0088FF);
+  }
+  
+  .info-card {
+    transition: all 0.3s ease;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 229, 204, 0.1);
+  }
+  
+  .input-focus:focus {
+    border-color: #00E5CC;
+    box-shadow: 0 0 0 3px rgba(0, 229, 204, 0.1);
+  }
+  
+  .save-btn {
+    background: linear-gradient(135deg, #00E5CC, #0088FF);
+    transition: all 0.3s;
+  }
+  
+  .save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(0, 229, 204, 0.3);
+  }
+  
+  .reset-btn {
+    background: #1A2C4A;
+    transition: all 0.3s;
+  }
+  
+  body.light-mode .reset-btn {
+    background: #e5e7eb;
+    color: #374151;
+  }
+  
+  .reset-btn:hover {
+    background: #2A3C5A;
+    transform: translateY(-2px);
+  }
+  
+  body.light-mode .reset-btn:hover {
+    background: #d1d5db;
+  }
+  
+  .success-toast {
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  
+  .stat-card {
+    background: linear-gradient(135deg, #13223a, #0f1a2e);
+    border: 1px solid rgba(0, 229, 204, 0.1);
+  }
+  
+  body.light-mode .stat-card {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border: 1px solid rgba(0, 229, 204, 0.3);
+  }
+  
+  .edit-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .info-row:hover .edit-icon {
+    opacity: 1;
+  }
+  
+  .field-editing {
+    border-color: #00E5CC !important;
+    background: #1A2C4A !important;
+  }
+  
+  body.light-mode .field-editing {
+    background: #fef3c7 !important;
+  }
+  
+  /* Light mode text colors */
+  body.light-mode .text-gray-300,
+  body.light-mode .text-gray-400 {
+    color: #6b7280;
+  }
+  
+  body.light-mode .text-white {
+    color: #1f2937;
+  }
+  
+  body.light-mode .text-gray-900 {
+    color: #111827;
+  }
+  
+  body.light-mode .bg-\[\#0F1A2E\] {
+    background-color: #ffffff;
+  }
+  
+  body.light-mode .bg-\[\#1A2C4A\] {
+    background-color: #f9fafb;
+  }
+  
+  body.light-mode .border-gray-800 {
+    border-color: #e5e7eb;
+  }
+  
+  body.light-mode .border-gray-700 {
+    border-color: #e5e7eb;
+  }
+  
+  body.light-mode .border-red-500\/30 {
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  body.light-mode .bg-red-500\/10 {
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  
+  body.light-mode .bg-teal-500\/20 {
+    background-color: rgba(20, 184, 166, 0.1);
+  }
+  
+  body.light-mode .bg-green-500\/20 {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+  
+  body.light-mode .hover\:bg-\[\#2A3C5A\]:hover {
+    background-color: #e5e7eb;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+  <!-- Profile Header with Stats -->
+  <div class="profile-header-gradient rounded-3xl p-8 mb-8">
+    <div class="flex flex-col md:flex-row items-center gap-8">
+      <!-- Avatar -->
+      <div class="relative">
+        <div class="w-32 h-32 rounded-full avatar-initials flex items-center justify-center text-4xl font-bold shadow-xl text-white">
+          {{ user.username|first|upper }}
+        </div>
+        <div class="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full border-4 border-[#0F1A2E] body:light-mode:border-white"></div>
+      </div>
+      
+      <!-- User Info -->
+      <div class="flex-1 text-center md:text-left">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2 text-white light-mode:text-gray-900">
+          {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="text-teal-400 mb-3">@{{ user.username }}</p>
+        <p class="text-gray-400 light-mode:text-gray-600 flex items-center justify-center md:justify-start gap-2">
+          <i class="fas fa-envelope"></i>
+          {{ user.email }}
+        </p>
+      </div>
+      
+      <!-- Stats -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="stat-card rounded-xl px-6 py-3 text-center">
+          <div class="text-2xl font-bold text-teal-400">{{ stats.total_analyses|default:"0" }}</div>
+          <div class="text-xs text-gray-400 light-mode:text-gray-600 mt-1">Total Analyses</div>
+        </div>
+        <div class="stat-card rounded-xl px-6 py-3 text-center">
+          <div class="text-2xl font-bold text-teal-400">{{ stats.member_since|default:"New" }}</div>
+          <div class="text-xs text-gray-400 light-mode:text-gray-600 mt-1">Member Since</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Profile Content -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column - Profile Info -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Personal Information Card -->
+      <div class="bg-[#0F1A2E] rounded-2xl p-6 border border-gray-800 light-mode:bg-white light-mode:border-gray-200">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold flex items-center gap-2 text-white light-mode:text-gray-900">
+            <i class="fas fa-user-edit text-teal-400"></i>
+            Personal Information
+          </h2>
+          <div class="flex gap-2">
+            <button onclick="toggleEditMode()" id="editToggleBtn" 
+                    class="px-4 py-2 bg-[#1A2C4A] hover:bg-[#2A3C5A] rounded-lg text-sm transition text-white light-mode:bg-gray-100 light-mode:text-gray-700 light-mode:hover:bg-gray-200">
+              <i class="fas fa-pen mr-2"></i>Edit All
+            </button>
+          </div>
+        </div>
+        
+        <form id="profileForm">
+          {% csrf_token %}
+          
+          <!-- Username (Read-only) -->
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-400 light-mode:text-gray-600 mb-2">
+              <i class="fas fa-user-tag mr-2 text-teal-400"></i>Username
+            </label>
+            <div class="bg-[#1A2C4A] rounded-xl px-4 py-3 text-gray-300 light-mode:text-gray-700 border border-gray-700 light-mode:bg-gray-50 light-mode:border-gray-200">
+              {{ user.username }}
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Username cannot be changed</p>
+          </div>
+          
+          <!-- First Name -->
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-400 light-mode:text-gray-600 mb-2">
+              <i class="fas fa-user mr-2 text-teal-400"></i>First Name
+            </label>
+            <div class="relative">
+              <input type="text" id="firstName" value="{{ user.first_name|default:'' }}" 
+                     class="w-full bg-[#1A2C4A] border border-gray-700 rounded-xl px-4 py-3 text-white light-mode:text-gray-900 light-mode:bg-gray-50 light-mode:border-gray-200 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                     disabled>
+              <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                <i class="fas fa-lock text-xs"></i>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Last Name -->
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-400 light-mode:text-gray-600 mb-2">
+              <i class="fas fa-user mr-2 text-teal-400"></i>Last Name
+            </label>
+            <div class="relative">
+              <input type="text" id="lastName" value="{{ user.last_name|default:'' }}" 
+                     class="w-full bg-[#1A2C4A] border border-gray-700 rounded-xl px-4 py-3 text-white light-mode:text-gray-900 light-mode:bg-gray-50 light-mode:border-gray-200 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                     disabled>
+              <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                <i class="fas fa-lock text-xs"></i>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Email -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-400 light-mode:text-gray-600 mb-2">
+              <i class="fas fa-envelope mr-2 text-teal-400"></i>Email Address
+            </label>
+            <div class="relative">
+              <input type="email" id="email" value="{{ user.email }}" 
+                     class="w-full bg-[#1A2C4A] border border-gray-700 rounded-xl px-4 py-3 text-white light-mode:text-gray-900 light-mode:bg-gray-50 light-mode:border-gray-200 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                     disabled>
+              <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                <i class="fas fa-lock text-xs"></i>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex gap-3" id="actionButtons" style="display: none;">
+            <button type="button" onclick="saveProfile()" 
+                    class="flex-1 save-btn text-white font-medium rounded-xl px-6 py-3 transition">
+              <i class="fas fa-save mr-2"></i>Save Changes
+            </button>
+            <button type="button" onclick="cancelEdit()" 
+                    class="flex-1 reset-btn text-gray-300 light-mode:text-gray-700 font-medium rounded-xl px-6 py-3 transition">
+              <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Account Security Card -->
+      <div class="bg-[#0F1A2E] rounded-2xl p-6 border border-gray-800 light-mode:bg-white light-mode:border-gray-200">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-white light-mode:text-gray-900">
+          <i class="fas fa-shield-alt text-teal-400"></i>
+          Account Security
+        </h2>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between p-4 bg-[#1A2C4A] rounded-xl light-mode:bg-gray-50">
+            <div>
+              <p class="font-medium text-white light-mode:text-gray-900">Password</p>
+              <p class="text-sm text-gray-400 light-mode:text-gray-600">Last changed: {{ user.last_login|date:"M d, Y"|default:"Never" }}</p>
+            </div>
+            <a href="#" 
+               class="px-4 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-400 rounded-lg transition">
+              <i class="fas fa-key mr-2"></i>Change
+            </a>
+          </div>
+          
+          <div class="flex items-center justify-between p-4 bg-[#1A2C4A] rounded-xl light-mode:bg-gray-50">
+            <div>
+              <p class="font-medium text-white light-mode:text-gray-900">Email Verification</p>
+              <p class="text-sm text-gray-400 light-mode:text-gray-600">{{ user.email|default:"No email set" }}</p>
+            </div>
+            <button class="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition">
+              <i class="fas fa-check-circle mr-2"></i>Verified
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Column - Activity & Quick Actions -->
+    <div class="space-y-6">
+      <!-- Quick Actions -->
+      <div class="bg-[#0F1A2E] rounded-2xl p-6 border border-gray-800 light-mode:bg-white light-mode:border-gray-200">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-white light-mode:text-gray-900">
+          <i class="fas fa-bolt text-teal-400"></i>
+          Quick Actions
+        </h3>
+        <div class="space-y-3">
+          <a href="{% url 'index' %}" 
+             class="flex items-center gap-3 p-3 bg-[#1A2C4A] rounded-xl hover:bg-[#2A3C5A] transition group light-mode:bg-gray-50 light-mode:hover:bg-gray-100">
+            <i class="fas fa-upload text-teal-400 group-hover:scale-110 transition"></i>
+            <span class="text-white light-mode:text-gray-700">Upload New Image</span>
+            <i class="fas fa-arrow-right ml-auto text-gray-500 group-hover:text-teal-400 transition"></i>
+          </a>
+          <a href="{% url 'all_images' %}" 
+             class="flex items-center gap-3 p-3 bg-[#1A2C4A] rounded-xl hover:bg-[#2A3C5A] transition group light-mode:bg-gray-50 light-mode:hover:bg-gray-100">
+            <i class="fas fa-history text-teal-400 group-hover:scale-110 transition"></i>
+            <span class="text-white light-mode:text-gray-700">View Analysis History</span>
+            <i class="fas fa-arrow-right ml-auto text-gray-500 group-hover:text-teal-400 transition"></i>
+          </a>
+          <a href="#" 
+             class="flex items-center gap-3 p-3 bg-[#1A2C4A] rounded-xl hover:bg-[#2A3C5A] transition group light-mode:bg-gray-50 light-mode:hover:bg-gray-100">
+            <i class="fas fa-download text-teal-400 group-hover:scale-110 transition"></i>
+            <span class="text-white light-mode:text-gray-700">Export My Data</span>
+            <i class="fas fa-arrow-right ml-auto text-gray-500 group-hover:text-teal-400 transition"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Account Info -->
+      <div class="bg-[#0F1A2E] rounded-2xl p-6 border border-gray-800 light-mode:bg-white light-mode:border-gray-200">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-white light-mode:text-gray-900">
+          <i class="fas fa-info-circle text-teal-400"></i>
+          Account Info
+        </h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-400 light-mode:text-gray-600">Account ID:</span>
+            <span class="text-gray-300 light-mode:text-gray-900 font-mono">{{ user.id|hashid }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400 light-mode:text-gray-600">Joined:</span>
+            <span class="text-gray-300 light-mode:text-gray-900">{{ user.date_joined|date:"F d, Y" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400 light-mode:text-gray-600">Last Login:</span>
+            <span class="text-gray-300 light-mode:text-gray-900">{{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400 light-mode:text-gray-600">Account Status:</span>
+            <span class="text-green-400">
+              <i class="fas fa-check-circle mr-1"></i>Active
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Danger Zone -->
+      <div class="bg-red-500/10 rounded-2xl p-6 border border-red-500/30">
+        <h3 class="text-lg font-bold mb-3 text-red-400 flex items-center gap-2">
+          <i class="fas fa-exclamation-triangle"></i>
+          Danger Zone
+        </h3>
+        <p class="text-sm text-gray-400 light-mode:text-gray-600 mb-4">Once you delete your account, there is no going back.</p>
+        <button onclick="confirmDelete()" 
+                class="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition">
+          <i class="fas fa-trash-alt mr-2"></i>Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-20 right-8 z-50 hidden"></div>
+
+<script>
+  let isEditing = false;
+  const originalData = {
+    firstName: document.getElementById('firstName').value,
+    lastName: document.getElementById('lastName').value,
+    email: document.getElementById('email').value
+  };
+  
+  function toggleEditMode() {
+    isEditing = !isEditing;
+    const inputs = ['firstName', 'lastName', 'email'];
+    const actionButtons = document.getElementById('actionButtons');
+    const editBtn = document.getElementById('editToggleBtn');
+    
+    inputs.forEach(inputId => {
+      const input = document.getElementById(inputId);
+      input.disabled = !isEditing;
+      if (isEditing) {
+        input.classList.add('field-editing');
+      } else {
+        input.classList.remove('field-editing');
+      }
+    });
+    
+    if (isEditing) {
+      actionButtons.style.display = 'flex';
+      editBtn.innerHTML = '<i class="fas fa-times mr-2"></i>Cancel Edit';
+      editBtn.classList.remove('bg-[#1A2C4A]', 'hover:bg-[#2A3C5A]');
+      editBtn.classList.add('bg-red-500/20', 'hover:bg-red-500/30', 'text-red-400');
+      showToast('Edit mode enabled - you can now edit your information', 'info');
+    } else {
+      cancelEdit();
+      editBtn.innerHTML = '<i class="fas fa-pen mr-2"></i>Edit All';
+      editBtn.classList.remove('bg-red-500/20', 'hover:bg-red-500/30', 'text-red-400');
+      editBtn.classList.add('bg-[#1A2C4A]', 'hover:bg-[#2A3C5A]');
+    }
+  }
+  
+  function cancelEdit() {
+    isEditing = false;
+    const inputs = ['firstName', 'lastName', 'email'];
+    
+    inputs.forEach(inputId => {
+      const input = document.getElementById(inputId);
+      input.disabled = true;
+      input.classList.remove('field-editing');
+      // Reset values to original
+      if (inputId === 'firstName') input.value = originalData.firstName;
+      if (inputId === 'lastName') input.value = originalData.lastName;
+      if (inputId === 'email') input.value = originalData.email;
+    });
+    
+    document.getElementById('actionButtons').style.display = 'none';
+    const editBtn = document.getElementById('editToggleBtn');
+    editBtn.innerHTML = '<i class="fas fa-pen mr-2"></i>Edit All';
+    editBtn.classList.remove('bg-red-500/20', 'hover:bg-red-500/30', 'text-red-400');
+    editBtn.classList.add('bg-[#1A2C4A]', 'hover:bg-[#2A3C5A]');
+  }
+  
+  function saveProfile() {
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    
+    // Validate email
+    if (email && !isValidEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    
+    // Prepare data to send (only include changed fields)
+    const updateData = {};
+    if (firstName !== originalData.firstName) updateData.first_name = firstName;
+    if (lastName !== originalData.lastName) updateData.last_name = lastName;
+    if (email !== originalData.email) updateData.email = email;
+    
+    // If nothing changed
+    if (Object.keys(updateData).length === 0) {
+      showToast('No changes to save', 'info');
+      cancelEdit();
+      return;
+    }
+    
+    // Show loading state
+    const saveBtn = document.querySelector('#actionButtons button:first-child');
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    saveBtn.disabled = true;
+    
+    // Send update request
+    fetch('/update-profile/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(updateData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update stored original values
+        originalData.firstName = data.user.first_name;
+        originalData.lastName = data.user.last_name;
+        originalData.email = data.user.email;
+        
+        // Update input fields
+        document.getElementById('firstName').value = data.user.first_name;
+        document.getElementById('lastName').value = data.user.last_name;
+        document.getElementById('email').value = data.user.email;
+        
+        showToast('Profile updated successfully!', 'success');
+        
+        // Update header display name
+        updateHeaderName(data.user.first_name, data.user.last_name);
+        
+        // Exit edit mode
+        cancelEdit();
+      } else {
+        showToast(data.error || 'Failed to update profile', 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('An error occurred. Please try again.', 'error');
+    })
+    .finally(() => {
+      saveBtn.innerHTML = originalBtnText;
+      saveBtn.disabled = false;
+    });
+  }
+  
+  function updateHeaderName(firstName, lastName) {
+    // Update the user menu display name
+    const userNameSpan = document.querySelector('#user-menu-button span');
+    if (userNameSpan) {
+      if (firstName) {
+        const displayName = lastName ? `${firstName} ${lastName.charAt(0)}.` : firstName;
+        userNameSpan.textContent = displayName;
+      }
+    }
+    
+    // Update dropdown user info
+    const dropdownName = document.querySelector('#user-dropdown .px-4.py-3 p');
+    const dropdownEmail = document.querySelector('#user-dropdown .px-4.py-3 .text-xs');
+    
+    if (dropdownName && (firstName || lastName)) {
+      const fullName = `${firstName} ${lastName}`.trim();
+      dropdownName.textContent = fullName || userNameSpan?.textContent || 'User';
+    }
+    
+    if (dropdownEmail && document.getElementById('email').value) {
+      dropdownEmail.textContent = document.getElementById('email').value;
+    }
+  }
+  
+  function confirmDelete() {
+    if (confirm('⚠️ WARNING: This action cannot be undone!\n\nAre you sure you want to delete your account permanently?')) {
+      if (confirm('Please confirm again: Type "DELETE" to proceed')) {
+        const confirmation = prompt('Type "DELETE" to confirm account deletion:');
+        if (confirmation === 'DELETE') {
+          fetch('/delete-account/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken')
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast('Account deleted. Redirecting...', 'success');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            } else {
+              showToast(data.error || 'Failed to delete account', 'error');
+            }
+          })
+          .catch(error => {
+            showToast('An error occurred', 'error');
+          });
+        } else {
+          showToast('Account deletion cancelled', 'info');
+        }
+      }
+    }
+  }
+  
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    const colors = {
+      success: 'bg-green-500/90 border-green-400',
+      error: 'bg-red-500/90 border-red-400',
+      info: 'bg-blue-500/90 border-blue-400'
+    };
+    
+    toast.className = `fixed top-20 right-8 z-50 success-toast ${colors[type]} border rounded-xl px-6 py-3 shadow-2xl`;
+    toast.innerHTML = `
+      <div class="flex items-center gap-3">
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} text-white"></i>
+        <span class="text-white">${message}</span>
+      </div>
+    `;
+    toast.classList.remove('hidden');
+    
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3000);
+  }
+  
+  function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+  
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  
+  // Individual field editing with inline edit
+  function enableFieldEdit(fieldId) {
+    if (!isEditing) {
+      const input = document.getElementById(fieldId);
+      input.disabled = false;
+      input.focus();
+      input.classList.add('field-editing');
+      
+      // Add save/cancel buttons for this field
+      const parent = input.parentElement;
+      const existingControls = parent.querySelector('.inline-controls');
+      if (!existingControls) {
+        const controls = document.createElement('div');
+        controls.className = 'inline-controls absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2';
+        controls.innerHTML = `
+          <button onclick="saveField('${fieldId}')" class="text-green-400 hover:text-green-300">
+            <i class="fas fa-check"></i>
+          </button>
+          <button onclick="cancelFieldEdit('${fieldId}')" class="text-red-400 hover:text-red-300">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        parent.appendChild(controls);
+      }
+    }
+  }
+  
+  function saveField(fieldId) {
+    const input = document.getElementById(fieldId);
+    const fieldName = fieldId === 'firstName' ? 'first_name' : fieldId === 'lastName' ? 'last_name' : 'email';
+    const updateData = {};
+    updateData[fieldName] = input.value.trim();
+    
+    fetch('/update-profile/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(updateData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        originalData[fieldId] = data.user[fieldName];
+        input.disabled = true;
+        input.classList.remove('field-editing');
+        const controls = input.parentElement.querySelector('.inline-controls');
+        if (controls) controls.remove();
+        showToast(`${fieldName.replace('_', ' ')} updated successfully!`, 'success');
+        updateHeaderName(data.user.first_name, data.user.last_name);
+      } else {
+        showToast(data.error || `Failed to update ${fieldName}`, 'error');
+      }
+    });
+  }
+  
+  function cancelFieldEdit(fieldId) {
+    const input = document.getElementById(fieldId);
+    input.value = originalData[fieldId];
+    input.disabled = true;
+    input.classList.remove('field-editing');
+    const controls = input.parentElement.querySelector('.inline-controls');
+    if (controls) controls.remove();
+  }
+</script>
+{% endblock %}

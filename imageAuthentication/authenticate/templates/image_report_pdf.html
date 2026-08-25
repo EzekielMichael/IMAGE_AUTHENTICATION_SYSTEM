@@ -1,0 +1,702 @@
+{% load static %}
+{% load hashid_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forensix Report - {{ image.filename }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.6cm 1.2cm;
+      @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 9px;
+        color: #94a3b8;
+      }
+    }
+    
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 11px;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0f766e;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .brand-section img { 
+      max-height: 38px; 
+      display: block;
+    }
+    .report-title-section {
+      text-align: right;
+    }
+    .report-title-section h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f766e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .report-title-section p {
+      margin: 3px 0 0 0;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    .section {
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f766e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+    }
+    
+    .row-two-col {
+      display: flex;
+      gap: 16px;
+    }
+    .col-6 {
+      flex: 1;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .data-table tr {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .data-table tr:last-child {
+      border-bottom: none;
+    }
+    .data-table th, .data-table td {
+      padding: 6px 4px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .data-table th {
+      color: #64748b;
+      font-weight: 600;
+      width: 35%;
+    }
+    .data-table td {
+      color: #0f172a;
+      font-weight: 500;
+    }
+
+    .verdict-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      height: 85%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .verdict-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 6px;
+      color: white;
+      background: #0f766e;
+      text-align: center;
+      margin: 6px 0;
+    }
+    .verdict-badge.ai { background: #e11d48; }
+    .verdict-badge.edit { background: #ea580c; }
+    .verdict-badge.authentic { background: #10b981; }
+
+    .detection-grid {
+      display: flex;
+      gap: 16px;
+    }
+    .detection-card {
+      flex: 1;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .detection-card .metrics-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .detection-card .metrics-score {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 6px 0;
+      line-height: 1;
+    }
+    .detection-card .metrics-score.ai-color { color: #e11d48; }
+    .detection-card .metrics-score.edit-color { color: #ea580c; }
+    
+    .status-text {
+      font-size: 11px;
+      font-weight: 600;
+      margin: 4px 0 2px 0;
+    }
+    .desc-text {
+      font-size: 10px;
+      color: #64748b;
+      margin: 0;
+    }
+
+    .heatmap-layout {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+    }
+    .grid-table-large {
+      width: 220px;
+      height: 220px;
+      margin: 0 auto;
+      border-collapse: separate;
+      border-spacing: 4px;
+    }
+    .grid-table-large td {
+      width: 33.33%;
+      height: 33.33%;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 6px;
+      color: #0f172a;
+    }
+    .grid-high { background-color: #fecaca; border: 2px solid #f87171; color: #991b1b; }
+    .grid-medium { background-color: #fef08a; border: 2px solid #facc15; color: #854d0e; }
+    .grid-low { background-color: #d1fae5; border: 2px solid #6ee7b7; color: #065f46; }
+
+    .gallery-row {
+      display: flex;
+      gap: 12px;
+    }
+    .gallery-item {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px;
+      text-align: center;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      border-radius: 4px;
+      display: block;
+      background: #ffffff;
+    }
+    .gallery-caption {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .characteristics-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .char-card {
+      background: #ffffff;
+      border-left: 3.5px solid #cbd5e1;
+      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+    }
+    .char-card.ai-theme { border-left-color: #e11d48; background: #fff1f2; }
+    .char-card.edit-theme { border-left-color: #ea580c; background: #fff7ed; }
+    .char-card.authentic-theme { border-left-color: #10b981; background: #f0fdf4; }
+    
+    .char-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .char-meta {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .about-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 10px;
+    }
+    .about-section h3 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f766e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    .about-section p {
+      font-size: 10.5px;
+      color: #334155;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .about-section strong {
+      color: #0f172a;
+    }
+
+    .severity-low { color: #10b981; font-weight: bold; }
+    .severity-medium { color: #f59e0b; font-weight: bold; }
+    .severity-high { color: #ea580c; font-weight: bold; }
+    .severity-very-high { color: #ef4444; font-weight: bold; }
+
+    .footer-disclaimer {
+      margin-top: 35px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 10px;
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header-container">
+    <div class="brand-section">
+      <img src="{{ base_url }}{% static 'img/forensix-logo.png' %}" alt="Forensix">
+    </div>
+    <div class="report-title-section">
+      <h1>Image Analysis Report</h1>
+      <p>Generated: {% now "F d, Y H:i" %}</p>
+    </div>
+  </div>
+
+  <!-- FILE INFO & VERDICT -->
+  <div class="section row-two-col">
+    <div class="col-6">
+      <div class="section-title">File Information</div>
+      <table class="data-table">
+        <tr><th>File Name</th><td>{{ image.filename }}</td></tr>
+        <tr><th>Upload Date</th><td>{{ image.uploaded_at|date:"M d, Y H:i" }}</td></tr>
+        <tr><th>Uploaded By</th><td>{% if image.uploaded_by %}{{ image.uploaded_by.get_full_name|default:image.uploaded_by.username }}{% else %}Guest{% endif %}</td></tr>
+      </table>
+    </div>
+    
+    <div class="col-6">
+      <div class="section-title">Final Decision</div>
+      <div class="verdict-card">
+        {% if verdict %}
+          {% with v=verdict.verdict|upper %}
+            <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.3px;">This image is classified as:</div>
+            <span class="verdict-badge {% if 'AI' in v %}ai{% elif 'EDIT' in v %}edit{% else %}authentic{% endif %}">
+              {{ verdict.verdict }}
+            </span>
+          {% endwith %}
+          {% if verdict.confidence_score %}
+            <div style="font-size: 10px; color: #475569; margin-top: 4px; font-weight: 500;">
+              Confidence Level: <strong>{{ verdict.confidence_score|floatformat:1 }}%</strong>
+            </div>
+          {% endif %}
+        {% else %}
+          <span style="color: #64748b; font-style: italic;">No analysis completed yet</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- DETECTION RESULTS -->
+  <div class="section">
+    <div class="section-title">Detection Results</div>
+    <div class="detection-grid">
+        <!-- AI Panel -->
+        <div class="detection-card">
+            <div class="metrics-label">AI Generation Probability</div>
+            <div class="metrics-score ai-color">{{ ai_percentage }}%</div>
+            {% if ai %}
+                {% with ai_conf=ai_percentage|floatformat:0 %}
+                    {% if ai_conf|add:"0" >= 80 %}
+                        <div class="status-text" style="color: #e11d48;">⚠️ High AI Likelihood</div>
+                        <p class="desc-text">This image shows strong signs of being AI-generated.</p>
+                    {% elif ai_conf|add:"0" >= 60 and ai_conf|add:"0" < 80 %}
+                        <div class="status-text" style="color: #ea580c;">⚠️ Moderate AI Indicators</div>
+                        <p class="desc-text">The image may be AI-generated or heavily processed.</p>
+                    {% elif ai_conf|add:"0" >= 40 and ai_conf|add:"0" < 60 %}
+                        <div class="status-text" style="color: #ea580c;">ℹ️ Low AI Probability</div>
+                        <p class="desc-text">Likely authentic but may have some compression artifacts.</p>
+                    {% else %}
+                        <div class="status-text" style="color: #10b981;">✅ Authentic Content</div>
+                        <p class="desc-text">No AI generation patterns detected in this image.</p>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                <p class="desc-text">AI detection not performed</p>
+            {% endif %}
+        </div>
+        
+        <!-- Human Edit Panel -->
+        <div class="detection-card">
+            <div class="metrics-label">Human Editing Magnitude</div>
+            <div class="metrics-score edit-color">{{ human_percentage }}%</div>
+            {% if human and human_percentage > 0 %}
+                {% with edit_score=human_percentage|floatformat:0 %}
+                    {% if edit_score|add:"0" >= 60 %}
+                        <div class="status-text" style="color: #dc2626;">⚠️ Significant Editing Detected</div>
+                        <p class="desc-text">The image has been heavily modified.</p>
+                    {% elif edit_score|add:"0" >= 35 and edit_score|add:"0" < 60 %}
+                        <div class="status-text" style="color: #ea580c;">⚠️ Moderate Editing Detected</div>
+                        <p class="desc-text">Some areas of the image have been altered.</p>
+                    {% elif edit_score|add:"0" >= 20 and edit_score|add:"0" < 35 %}
+                        <div class="status-text" style="color: #f59e0b;">ℹ️ Minor Adjustments Found</div>
+                        <p class="desc-text">Small retouching or color corrections were applied.</p>
+                    {% else %}
+                        <div class="status-text" style="color: #10b981;">✅ No Significant Edits</div>
+                        <p class="desc-text">The image appears untouched.</p>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                <p class="desc-text">Human editing analysis not performed</p>
+            {% endif %}
+        </div>
+    </div>
+  </div>
+
+{% if image.image %}
+  <div class="section">
+    <div class="section-title">Image Analysis</div>
+    <div class="images-row" style="display: flex; gap: 1px; justify-content: center;">
+      <div class="image-box" style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px; padding: 3px;">
+        <img src="{{ base_url }}{{ image.image.url }}" alt="Original" style="width: 100%; height: 100%; object-fit: contain; border-radius: 1px; display: block; background: #ffffff;">
+        <div class="image-label" style="font-size: 10px; color: #475569; margin-top: 1; font-weight: 600;">Original Image</div>
+      </div>
+      {% if human and human.heatmap %}
+      <div class="image-box" style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px; padding: 3px;">
+        <img src="{{ base_url }}{{ human.heatmap.url }}" alt="Heatmap" style="width: 100%; height: 100%; object-fit: contain; border-radius: 1px; display: block; background: #ffffff;">
+        <div class="image-label" style="font-size: 10px; color: #475569; margin-top: 4px; font-weight: 600;">Heatmap</div>
+      </div>
+      {% endif %}
+      {% if human and human.overlay %}
+      <div class="image-box" style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px; padding: 3px;">
+        <img src="{{ base_url }}{{ human.overlay.url }}" alt="Overlay" style="width: 100%; height: 100%; object-fit: contain; border-radius: 1px; display: block; background: #ffffff;">
+        <div class="image-label" style="font-size: 10px; color: #475569; margin-top: 4px; font-weight: 600;">Overlay</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- HEATMAP ANALYSIS -->
+  {% if include_heatmap and heatmap_analysis %}
+  <div style="page-break-before: always;">
+    <div class="section">
+      <div class="section-title">Heatmap Analysis (Where Edits Are Located)</div>
+      
+      <div class="heatmap-layout">
+        <div style="flex: 1; min-width: 200px;">
+          <table class="data-table">
+            <tr>
+              <th>Severity Level</th>
+              <td class="severity-{{ heatmap_analysis.severity_level|lower }}">
+                {{ heatmap_analysis.get_severity_level_display }}
+              </td>
+            </tr>
+            {% if heatmap_analysis.primary_region %}
+            <tr><th>Main Edited Area</th><td>{{ heatmap_analysis.primary_region|title }}</td></tr>
+            {% endif %}
+            {% if heatmap_analysis.secondary_region %}
+            <tr><th>Secondary Edited Area</th><td>{{ heatmap_analysis.secondary_region|title }}</td></tr>
+            {% endif %}
+            <tr><th>Edited Percentage</th><td>{% widthratio heatmap_analysis.edited_percentage 1 1 %}% of image</td></tr>
+            <tr><th>Max Edit Intensity</th><td>{% widthratio heatmap_analysis.max_edit_score 1 100 %}%</td></tr>
+            <tr><th>Average Edit Intensity</th><td>{% widthratio heatmap_analysis.avg_edit_score 1 100 %}%</td></tr>
+            {% if heatmap_analysis.edit_zones_count > 0 %}
+            <tr><th>Separate Edit Zones</th><td>{{ heatmap_analysis.edit_zones_count }}</td></tr>
+            {% endif %}
+          </table>
+        </div>
+
+        {% if heatmap_analysis.grid_scores %}
+        <div style="flex: 1; text-align: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px;">
+            3×3 Map of Editing Intensity
+          </div>
+          <table class="grid-table-large">
+            <tr>
+              <td class="{% if heatmap_analysis.grid_scores.top_left > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.top_left > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.top_left 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.top_center > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.top_center > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.top_center 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.top_right > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.top_right > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.top_right 1 100 %}%
+              </td>
+            </tr>
+            <tr>
+              <td class="{% if heatmap_analysis.grid_scores.middle_left > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.middle_left > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.middle_left 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.middle_center > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.middle_center > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.middle_center 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.middle_right > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.middle_right > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.middle_right 1 100 %}%
+              </td>
+            </tr>
+            <tr>
+              <td class="{% if heatmap_analysis.grid_scores.bottom_left > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.bottom_left > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.bottom_left 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.bottom_center > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.bottom_center > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.bottom_center 1 100 %}%
+              </td>
+              <td class="{% if heatmap_analysis.grid_scores.bottom_right > 0.5 %}grid-high{% elif heatmap_analysis.grid_scores.bottom_right > 0.2 %}grid-medium{% else %}grid-low{% endif %}">
+                {% widthratio heatmap_analysis.grid_scores.bottom_right 1 100 %}%
+              </td>
+            </tr>
+          </table>
+          <div style="font-size: 9px; color: #94a3b8; margin-top: 6px;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 2px; vertical-align: middle;"></span> Low
+            <span style="display: inline-block; width: 12px; height: 12px; background: #fef08a; border: 1px solid #facc15; border-radius: 2px; vertical-align: middle; margin-left: 8px;"></span> Medium
+            <span style="display: inline-block; width: 12px; height: 12px; background: #fecaca; border: 1px solid #f87171; border-radius: 2px; vertical-align: middle; margin-left: 8px;"></span> High
+          </div>
+        </div>
+        {% endif %}
+        
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CHARACTERISTICS -->
+  <div class="section">
+    <div class="section-title">Key Findings</div>
+    <div class="characteristics-container">
+            
+      {% if verdict and 'AI' in verdict.verdict|upper %}
+          {% if c2pa_present %}
+          <div class="char-card ai-theme">
+              <div class="char-header">📋 C2PA Digital Signature Found</div>
+              <div class="char-meta">This image has a C2PA certificate, which is often added to AI-generated content.</div>
+          </div>
+          {% else %}
+          <div class="char-card ai-theme">
+              <div class="char-header">🔬 Unnatural Texture Detected</div>
+              {% if ai_detection %}
+              <div class="char-meta">AI Confidence: {% widthratio ai_detection.confidence 1 1 %}% ({{ ai_detection.model_name }})</div>
+              {% endif %}
+          </div>
+          {% endif %}
+
+          <div class="char-card ai-theme">
+              <div class="char-header">📊 AI Generation Artifacts Found</div>
+              <div class="char-meta">The image shows frequency patterns typical of AI-generated content.</div>
+          </div>
+
+          <div class="char-card ai-theme">
+              <div class="char-header">☀️ Lighting Inconsistencies</div>
+              {% if heatmap and heatmap.primary_region %}
+              <div class="char-meta">Lighting appears inconsistent around the {{ heatmap.primary_region }} area.</div>
+              {% endif %}
+          </div>
+
+          {% if not metadata.camera_make %}
+          <div class="char-card ai-theme">
+              <div class="char-header">📷 No Camera Information Found</div>
+              <div class="char-meta">This image doesn't have camera metadata, which is common for AI-generated images.</div>
+          </div>
+          {% endif %}
+
+          {% if metadata and metadata.ai_tool %}
+          <div class="char-card ai-theme">
+              <div class="char-header">🛠️ AI Tool Identified: {{ metadata.ai_tool }}</div>
+              <div class="char-meta">The metadata shows this image was created with {{ metadata.ai_tool }}.</div>
+          </div>
+          {% endif %}
+
+          {% if heatmap and heatmap.edited_percentage > 20 %}
+          <div class="char-card edit-theme">
+              <div class="char-header">⚠️ Widespread Artifacts</div>
+              <div class="char-meta">About {% widthratio heatmap.edited_percentage 1 1 %}% of this image shows editing artifacts.</div>
+          </div>
+          {% endif %}
+          
+      {% elif verdict and 'EDIT' in verdict.verdict|upper %}
+          <div class="char-card edit-theme">
+              <div class="char-header">📊 Edited Areas Found</div>
+              {% if human_detection %}
+              <div class="char-meta">Editing confidence: {% widthratio human_detection.detection_score 1 100 %}%</div>
+              {% endif %}
+          </div>
+
+          {% if heatmap and heatmap.primary_region %}
+          <div class="char-card edit-theme">
+              <div class="char-header">📍 Modifications in {{ heatmap.primary_region|title }} Area</div>
+              <div class="char-meta">Edits are concentrated in this region with {% widthratio heatmap.max_edit_score 1 100 %}% intensity.</div>
+          </div>
+          {% endif %}
+
+          {% if heatmap and heatmap.edit_zones_count > 1 %}
+          <div class="char-card edit-theme">
+              <div class="char-header">🗂️ Multiple Edit Zones</div>
+              <div class="char-meta">{{ heatmap.edit_zones_count }} separate areas of manipulation were detected.</div>
+          </div>
+          {% endif %}
+
+          {% if metadata and metadata.software %}
+          <div class="char-card edit-theme">
+              <div class="char-header">💻 Editing Software Detected</div>
+              <div class="char-meta">{{ metadata.software }} was used to modify this image.</div>
+          </div>
+          {% endif %}
+          
+      {% elif verdict and 'AUTHENTIC' in verdict.verdict|upper %}
+          <div class="char-card authentic-theme">
+              <div class="char-header">✅ Authentic Image Verified</div>
+              <div class="char-meta">This image shows natural, unmodified characteristics.</div>
+          </div>
+
+          {% if metadata and metadata.camera_make %}
+          <div class="char-card authentic-theme">
+              <div class="char-header">📷 Camera Information Found</div>
+              <div class="char-meta">Device: {{ metadata.camera_make }} {{ metadata.camera_model }}</div>
+          </div>
+          {% endif %}
+
+          <div class="char-card authentic-theme">
+              <div class="char-header">☀️ Natural Lighting</div>
+              <div class="char-meta">The lighting and shadows appear consistent and realistic.</div>
+          </div>
+
+          {% if human_detection and human_detection.detection_score < 0.2 %}
+          <div class="char-card authentic-theme">
+              <div class="char-header">✅ No Editing Found</div>
+              <div class="char-meta">This image shows no signs of manipulation.</div>
+          </div>
+          {% endif %}
+        {% else %}
+          <div style="text-align: center; padding: 24px; color: #64748b; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+              <div style="font-size: 24px; margin-bottom: 4px;">📋</div>
+              <div style="font-weight: 600; font-size: 12px; color: #475569;">No Analysis Completed</div>
+              <div style="font-size: 10px; margin-top: 2px;">Please run analysis to see detailed findings.</div>
+          </div>
+        {% endif %}
+          
+    </div>
+  </div>
+
+  <!-- METADATA -->
+  <div class="section">
+    <div class="section-title">Image Metadata</div>
+    {% if metadata %}
+    <table class="data-table" style="font-size: 10.5px; width: 100%; table-layout: fixed;">
+      <tr>
+        <th style="width: 18%;">Camera / Device</th>
+        <td style="width: 32%;">{{ metadata.camera_make }} {{ metadata.camera_model|default:"Not Available" }}</td>
+        <th style="width: 18%;">Image Size</th>
+        <td style="width: 32%;">{{ metadata.resolution_width|default:image.image.width }} × {{ metadata.resolution_height|default:image.image.height }}</td>
+      </tr>
+      <tr>
+        <th>Capture Date</th>
+        <td>{{ metadata.date_original|default:"Not Available" }}</td>
+        <th>File Size</th>
+        <td>{{ image.image.size|filesizeformat }}</td>
+      </tr>
+      <tr>
+        <th>Last Modified</th>
+        <td>{{ metadata.modify_date|default:"Not Available" }}</td>
+        <th>EXIF Status</th>
+        <td>
+          {% if metadata.c2pa_present %}<strong>✅ C2PA Signed</strong>
+          {% elif metadata.camera_make or metadata.camera_model %}Standard EXIF Present
+          {% else %}<span style="color:#64748b;">No EXIF Data</span>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Software Used</th>
+        <td>{{ metadata.software|default:"Not Detected" }}</td>
+        <th>GPS Location</th>
+        <td>
+          {% if metadata.gps_latitude and metadata.gps_longitude %}
+            {{ metadata.gps_latitude|floatformat:4 }}, {{ metadata.gps_longitude|floatformat:4 }}
+          {% else %}Not Available{% endif %}
+        </td>
+      </tr>
+      {% if metadata.exposure_time or metadata.f_number or metadata.iso or metadata.focal_length %}
+      <tr>
+        <th>Camera Settings</th>
+        <td colspan="3">
+          {% if metadata.exposure_time %}Shutter: {{ metadata.exposure_time }} | {% endif %}
+          {% if metadata.f_number %}Aperture: f/{{ metadata.f_number }} | {% endif %}
+          {% if metadata.iso %}ISO: {{ metadata.iso }} | {% endif %}
+          {% if metadata.focal_length %}Focal Length: {{ metadata.focal_length }} mm{% endif %}
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+    {% else %}
+      <p style="color:#64748b; font-style:italic; text-align:center; padding:10px;">No metadata available for this image.</p>
+    {% endif %}
+  </div>
+
+  <!-- ABOUT THIS REPORT -->
+  <div class="section">
+    <div class="about-section">
+      <h3>📋 About This Report</h3>
+      <p>
+        This report was generated by Forensix, an automated image analysis system that checks if an image is:
+        <strong>Authentic</strong> (captured by a camera without modifications),
+        <strong>AI-Generated</strong> (created by artificial intelligence),
+        or <strong>Human-Edited</strong> (modified using editing software).
+      </p>
+      <p style="margin-top: 6px;">
+        The system analyzes two main factors: <strong>AI Generation Probability</strong> (how likely the image was made by AI) and 
+        <strong>Human Editing Magnitude</strong> (how much of the image has been manually altered). 
+        These scores are combined with metadata checks to produce the final verdict. Higher percentages mean higher confidence in the detection.
+      </p>
+      <p style="margin-top: 6px;">
+        The heatmap and overlay images visually highlight areas that may have been edited or show AI artifacts.
+      </p>
+    </div>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <div class="footer-disclaimer">
+    <strong>Disclaimer:</strong> This report is generated by an automated system for forensic reference. The findings are based on statistical models and should not be considered as final legal evidence. Always consult a forensic expert for critical decisions.
+  </div>
+</body>
+</html>

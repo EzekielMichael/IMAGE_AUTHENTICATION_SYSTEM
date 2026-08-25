@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hashid_tags %}
+
+{% block title %}Forensix - All Uploaded Images{% endblock %}
+
+{% block content %}
+<!-- Filter and Sort Section -->
+<div class="mb-8">
+  <div class="bg-[#0f1a2e] rounded-2xl p-6 border border-gray-800 light-mode:bg-white light-mode:border-gray-200">
+    
+    <!-- Top Row: Analyze All Button and Sort -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+      {% if role_info.is_superuser %}
+      <a href="{% url 'run_analysis_all' %}" 
+         onclick="return confirm('This will analyze ALL images that have AI detection missing. This may take a while. Continue?');"
+         class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+        <i class="fas fa-tasks"></i> Analyze All Images
+      </a>
+      {% endif %}
+      
+      <div class="flex items-center gap-3">
+        <h2 class="text-sm font-semibold text-gray-400">Sort by:</h2>
+        <div class="relative">
+          <select id="sortSelect" class="appearance-none bg-[#1a2c4a] text-white rounded-xl px-4 py-2 pr-8 text-sm border border-gray-600 focus:border-teal-400 focus:outline-none cursor-pointer light-mode:bg-gray-100 light-mode:text-gray-900 light-mode:border-gray-300 transition-all">
+            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>📅 Newest First</option>
+            <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>📅 Oldest First</option>
+            <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>🔤 Name (A-Z)</option>
+            <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>🔤 Name (Z-A)</option>
+            <option value="ai_score_high" {% if current_sort == 'ai_score_high' %}selected{% endif %}>🤖 AI Score (High-Low)</option>
+            <option value="ai_score_low" {% if current_sort == 'ai_score_low' %}selected{% endif %}>🤖 AI Score (Low-High)</option>
+            <option value="edit_score_high" {% if current_sort == 'edit_score_high' %}selected{% endif %}>✏️ Edit Score (High-Low)</option>
+            <option value="edit_score_low" {% if current_sort == 'edit_score_low' %}selected{% endif %}>✏️ Edit Score (Low-High)</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Divider -->
+    <div class="border-t border-gray-700 my-3"></div>
+    
+    <!-- Bottom Row: Filter Buttons and View Mode Toggle -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <!-- Filter Buttons with Counts -->
+      <div class="flex flex-wrap gap-2">
+        <a href="?filter=all&sort={{ current_sort }}&page=1" 
+          class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {% if filter_type == 'all' %}filter-active{% else %}filter-inactive{% endif %} flex items-center gap-2">
+          <i class="fas fa-images"></i>
+          <span>All</span>
+          <span class="filter-count {% if filter_type == 'all' %}bg-white/20{% else %}bg-black/20{% endif %} px-2 py-0.5 rounded-full text-xs">{{ total_counts.all }}</span>
+        </a>
+        
+        <a href="?filter=authentic&sort={{ current_sort }}&page=1" 
+          class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {% if filter_type == 'authentic' %}filter-active{% else %}filter-inactive{% endif %} flex items-center gap-2">
+          <i class="fas fa-shield-alt"></i>
+          <span>Authentic</span>
+          <span class="filter-count {% if filter_type == 'authentic' %}bg-white/20{% else %}bg-black/20{% endif %} px-2 py-0.5 rounded-full text-xs">{{ total_counts.authentic }}</span>
+        </a>
+        
+        <a href="?filter=ai_generated&sort={{ current_sort }}&page=1" 
+          class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {% if filter_type == 'ai_generated' %}filter-active{% else %}filter-inactive{% endif %} flex items-center gap-2">
+          <i class="fas fa-robot"></i>
+          <span>AI Generated</span>
+          <span class="filter-count {% if filter_type == 'ai_generated' %}bg-white/20{% else %}bg-black/20{% endif %} px-2 py-0.5 rounded-full text-xs">{{ total_counts.ai_generated }}</span>
+        </a>
+        
+        <a href="?filter=human_edited&sort={{ current_sort }}&page=1" 
+          class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {% if filter_type == 'human_edited' %}filter-active{% else %}filter-inactive{% endif %} flex items-center gap-2">
+          <i class="fas fa-pencil-alt"></i>
+          <span>Human Edited</span>
+          <span class="filter-count {% if filter_type == 'human_edited' %}bg-white/20{% else %}bg-black/20{% endif %} px-2 py-0.5 rounded-full text-xs">{{ total_counts.human_edited }}</span>
+        </a>
+        
+        <a href="?filter=not_analyzed&sort={{ current_sort }}&page=1" 
+          class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 {% if filter_type == 'not_analyzed' %}filter-active{% else %}filter-inactive{% endif %} flex items-center gap-2">
+          <i class="fas fa-clock"></i>
+          <span>Not Analyzed</span>
+          <span class="filter-count {% if filter_type == 'not_analyzed' %}bg-white/20{% else %}bg-black/20{% endif %} px-2 py-0.5 rounded-full text-xs">{{ total_counts.not_analyzed }}</span>
+        </a>
+      </div>
+      
+      <!-- View Mode Toggle -->
+      <div class="flex items-center gap-3">
+        <i class="fas fa-scroll text-teal-400 text-sm"></i>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <span class="text-xs {% if not use_infinite_scroll %}text-teal-400{% else %}text-gray-400{% endif %}">Pagination</span>
+          <div class="relative">
+            <input type="checkbox" id="scrollModeToggle" class="sr-only" {% if use_infinite_scroll %}checked{% endif %}>
+            <div class="block bg-gray-600 w-10 h-5 rounded-full"></div>
+            <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-all duration-300 ease-in-out"></div>
+          </div>
+          <span class="text-xs {% if use_infinite_scroll %}text-teal-400{% else %}text-gray-400{% endif %}">Infinite Scroll</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Images Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="imagesGrid">
+  {% for img in images %}
+  <div class="image-card bg-[#13223a] rounded-3xl overflow-hidden light-mode:bg-white light-mode:shadow-lg">
+    <a href="{% url 'image_detail' img.id|hashid %}">
+      <div class="relative">
+        <img src="{{ img.image.url }}" class="w-full h-64 object-cover" alt="{{ img.filename }}">
+        
+        {% with verdict=img.final_verdict.first %}
+        <div class="absolute top-4 right-4 px-4 py-1 text-xs font-bold rounded-2xl backdrop-blur-sm
+          {% if not verdict %}bg-gray-600/90
+          {% elif 'AUTHENTIC' in verdict.verdict|upper %}bg-gradient-to-r from-emerald-500 to-green-600
+          {% elif 'AI' in verdict.verdict|upper or 'GENERATED' in verdict.verdict|upper %}bg-gradient-to-r from-red-500 to-rose-600
+          {% elif 'EDITED' in verdict.verdict|upper or 'MANIPULATED' in verdict.verdict|upper %}bg-gradient-to-r from-orange-500 to-amber-600
+          {% else %}bg-gradient-to-r from-purple-500 to-pink-600{% endif %} shadow-lg">
+          
+          <i class="fas 
+            {% if not verdict %}fa-hourglass-half
+            {% elif 'AUTHENTIC' in verdict.verdict|upper %}fa-shield-alt
+            {% elif 'AI' in verdict.verdict|upper or 'GENERATED' in verdict.verdict|upper %}fa-robot
+            {% elif 'EDITED' in verdict.verdict|upper or 'MANIPULATED' in verdict.verdict|upper %}fa-pencil-alt
+            {% else %}fa-question-circle{% endif %} mr-1"></i>
+          
+          {% if verdict %}{{ verdict.verdict }}{% else %}<span class="flex items-center gap-1"><i class="fas fa-spinner fa-pulse"></i> Not Analyzed</span>{% endif %}
+        </div>
+        {% endwith %}
+        
+        <!-- Scores -->
+        <div class="absolute bottom-4 left-4 right-4 flex gap-2">
+          {% if img.ai_confidence_percentage %}
+            <div class="score-badge px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/80 backdrop-blur-sm">
+              <span class="ai-label text-red-400"><i class="fas fa-microchip"></i> AI:</span>
+              <span class="score-value text-white">{{ img.ai_confidence_percentage|floatformat:1 }}%</span>
+            </div>
+          {% endif %}
+          {% if img.human_edit_percentage %}
+            <div class="score-badge px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/80 backdrop-blur-sm">
+              <span class="edit-label text-orange-400"><i class="fas fa-user-edit"></i> Edit:</span>
+              <span class="score-value text-white">{{ img.human_edit_percentage|floatformat:1 }}%</span>
+            </div>
+          {% endif %}
+          {% if not img.ai_confidence_percentage and not img.human_edit_percentage %}
+            <div class="score-badge px-3 py-1.5 rounded-xl text-xs bg-black/80 backdrop-blur-sm">
+              <i class="fas fa-hourglass-half text-yellow-400"></i>
+              <span class="text-gray-300 ml-1">Pending</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    
+    <div class="p-6">
+      <p class="font-semibold truncate text-lg text-gray-900 dark:text-white" title="{{ img.filename }}">{{ img.filename|truncatechars:30 }}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <i class="far fa-calendar-alt mr-1"></i> Uploaded {{ img.uploaded_at|timesince }} ago
+      </p>
+      {% if role_info.is_superuser or role_info.is_staff %}
+        <p class="text-xs text-gray-500 mt-1">
+          <i class="fas fa-user mr-1"></i> Uploaded by: {{ img.uploaded_by_username }}
+          <span class="text-xs px-1 rounded {% if img.uploader_role == 'Superuser' %}text-purple-400{% elif img.uploader_role == 'Staff' %}text-blue-400{% else %}text-gray-400{% endif %}">({{ img.uploader_role }})</span>
+        </p>
+      {% endif %}
+      
+      <div class="mt-5 flex justify-between items-center">
+        <a href="{% url 'delete_image' img.id|hashid %}" 
+           data-filename="{{ img.filename|escapejs }}"
+           onclick="return confirm('Are you sure you want to delete ' + this.dataset.filename + '?\n\nThis action cannot be undone and will also delete all associated analyses.');"
+           class="bg-red-600/30 hover:bg-red-600/50 text-red-400 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+          <i class="fas fa-trash-alt"></i> Delete
+        </a>
+        
+        {% with has_analysis=img.final_verdict.first %}
+          {% if has_analysis %}
+            <a href="{% url 'image_detail' img.id|hashid %}" class="bg-emerald-600/90 hover:bg-emerald-600/50 text-emerald-300 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+              <i class="fas fa-check-circle"></i> Analyzed
+            </a>
+          {% else %}
+            <a href="{% url 'run_analysis' img.id|hashid %}" class="bg-blue-600/90 hover:bg-blue-600/50 text-blue-300 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+              <i class="fas fa-sync-alt"></i> Analyze
+            </a>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination Container -->
+<div id="paginationContainer" class="{% if use_infinite_scroll %}hidden{% endif %}">
+  {% if page_obj.has_other_pages %}
+  <div class="flex justify-center mt-12 gap-3 flex-wrap">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&filter={{ filter_type }}&sort={{ current_sort }}" 
+         class="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-2xl transition flex items-center gap-2 text-gray-300 dark:text-white">
+        <i class="fas fa-chevron-left text-sm"></i> Previous
+      </a>
+    {% endif %}
+    
+    <div class="flex gap-2">
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="px-4 py-3 bg-teal-500 rounded-2xl font-semibold text-white">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a href="?page={{ num }}&filter={{ filter_type }}&sort={{ current_sort }}" 
+             class="px-4 py-3 bg-[#13223a] hover:bg-[#1a2c4a] rounded-2xl transition text-gray-300 dark:text-white">
+            {{ num }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&filter={{ filter_type }}&sort={{ current_sort }}" 
+         class="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-2xl transition flex items-center gap-2 text-gray-300 dark:text-white">
+        Next <i class="fas fa-chevron-right text-sm"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Loading Spinner for Infinite Scroll -->
+<div id="loadingSpinner" class="text-center py-8 hidden">
+  <div class="inline-flex items-center gap-3 px-6 py-3 bg-[#13223a] rounded-xl">
+    <i class="fas fa-spinner fa-spin text-teal-400 text-xl"></i>
+    <span class="text-gray-300">Loading more images...</span>
+  </div>
+</div>
+
+<!-- Empty State -->
+{% if not images %}
+<div class="text-center py-32 no-results">
+  <i class="fas fa-filter text-8xl text-gray-600 mb-6"></i>
+  <h3 class="text-2xl font-medium text-gray-900 dark:text-gray-300">No images found</h3>
+  <p class="text-gray-500 dark:text-gray-500 mt-3">
+    {% if filter_type != 'all' %}
+      No images match the "{{ filter_type|title }}" filter.<br>Try a different filter or upload a new image.
+    {% else %}
+      No images uploaded yet. Upload your first image to get started.
+    {% endif %}
+  </p>
+  <a href="{% url 'index' %}" class="mt-8 inline-block bg-teal-500 hover:bg-teal-600 px-10 py-4 rounded-3xl font-semibold transition text-white">
+    <i class="fas fa-upload mr-2"></i> Upload First Image
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Helper functions
+function getCookie(name) {
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function showToast(message, type) {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10002; display: flex; flex-direction: column; gap: 10px;';
+        document.body.appendChild(toastContainer);
+    }
+    const toast = document.createElement('div');
+    const bgColor = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#3b82f6');
+    toast.style.cssText = `background: ${bgColor}; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15);`;
+    toast.innerText = message;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Sort dropdown handler
+const sortSelect = document.getElementById('sortSelect');
+if (sortSelect) {
+    sortSelect.addEventListener('change', function() {
+        window.location.href = `?filter={{ filter_type }}&sort=${this.value}&page=1`;
+    });
+}
+
+// Mode toggle handler - FIXED toggle dot
+const modeToggle = document.getElementById('scrollModeToggle');
+const toggleDot = document.querySelector('#scrollModeToggle ~ .dot');
+if (modeToggle) {
+    // Set initial dot position
+    function updateDotPosition() {
+        if (toggleDot) {
+            if (modeToggle.checked) {
+                toggleDot.style.transform = 'translateX(20px)';
+            } else {
+                toggleDot.style.transform = 'translateX(0)';
+            }
+        }
+    }
+    updateDotPosition();
+    
+    modeToggle.addEventListener('change', function() {
+        updateDotPosition();
+        fetch('/toggle-scroll-mode/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ use_infinite_scroll: this.checked })
+        }).then(() => location.reload());
+    });
+}
+
+// Theme dropdown colors
+function updateDropdownColors() {
+    const select = document.getElementById('sortSelect');
+    if (!select) return;
+    if (document.body.classList.contains('light-mode')) {
+        select.style.backgroundColor = '#f3f4f6';
+        select.style.color = '#1f2937';
+        Array.from(select.options).forEach(opt => { opt.style.backgroundColor = '#ffffff'; opt.style.color = '#1f2937'; });
+    } else {
+        select.style.backgroundColor = '#1a2c4a';
+        select.style.color = '#e5e7eb';
+        Array.from(select.options).forEach(opt => { opt.style.backgroundColor = '#1a2c4a'; opt.style.color = '#e5e7eb'; });
+    }
+}
+new MutationObserver(() => updateDropdownColors()).observe(document.body, { attributes: true });
+updateDropdownColors();
+
+// ==================== INFINITE SCROLL ====================
+</script>
+{% if use_infinite_scroll %}
+<script>
+let isLoading = false;
+let currentPage = parseInt('{{ page_obj.number }}');
+let hasNextPage = '{{ page_obj.has_next|lower }}' === 'true';
+let currentFilter = '{{ filter_type }}';
+let currentSortValue = '{{ current_sort }}';
+
+// Hide pagination
+const paginationContainer = document.getElementById('paginationContainer');
+if (paginationContainer) paginationContainer.style.display = 'none';
+
+// Scroll handler with throttle
+let scrollTimeout;
+window.addEventListener('scroll', function() {
+    if (scrollTimeout) return;
+    scrollTimeout = setTimeout(function() {
+        if (!isLoading && hasNextPage) {
+            const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 500;
+            if (nearBottom) {
+                loadMoreImages();
+            }
+        }
+        scrollTimeout = null;
+    }, 100);
+});
+
+function loadMoreImages() {
+    if (isLoading) return;
+    isLoading = true;
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+    
+    const nextPage = currentPage + 1;
+    const url = `?page=${nextPage}&infinite=1&sort=${currentSortValue}&filter=${currentFilter}`;
+    
+    console.log('Loading more images:', url); // Debug log
+    
+    fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Response data:', data); // Debug log
+        
+        if (data.success && data.images && data.images.length > 0) {
+            data.images.forEach(img => {
+                const card = createImageCard(img);
+                document.getElementById('imagesGrid').insertAdjacentHTML('beforeend', card);
+            });
+            currentPage = nextPage;
+            hasNextPage = data.has_next;
+            
+            if (!hasNextPage) {
+                const spinner = document.getElementById('loadingSpinner');
+                if (spinner) {
+                    spinner.innerHTML = '<div class="text-gray-500 py-4">No more images to load</div>';
+                    setTimeout(() => {
+                        spinner.classList.add('hidden');
+                    }, 2000);
+                }
+            }
+        } else {
+            hasNextPage = false;
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                spinner.innerHTML = '<div class="text-gray-500 py-4">No more images to load</div>';
+                setTimeout(() => {
+                    spinner.classList.add('hidden');
+                }, 2000);
+            }
+        }
+        isLoading = false;
+        if (spinner) spinner.classList.add('hidden');
+    })
+    .catch(error => {
+        console.error('Error loading images:', error);
+        isLoading = false;
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) spinner.classList.add('hidden');
+        showToast('Error loading more images', 'error');
+    });
+}
+
+function createImageCard(img) {
+    const isAuthentic = img.verdict && img.verdict.toUpperCase().includes('AUTHENTIC');
+    const isAI = img.verdict && (img.verdict.toUpperCase().includes('AI') || img.verdict.toUpperCase().includes('GENERATED'));
+    const isEdited = img.verdict && (img.verdict.toUpperCase().includes('EDITED') || img.verdict.toUpperCase().includes('MANIPULATED'));
+    
+    let verdictClass = 'bg-gray-600/90';
+    let verdictIcon = 'fa-hourglass-half';
+    let verdictText = img.verdict || 'Not Analyzed';
+    
+    if (img.verdict) {
+        if (isAuthentic) { 
+            verdictClass = 'bg-gradient-to-r from-emerald-500 to-green-600'; 
+            verdictIcon = 'fa-shield-alt'; 
+        } else if (isAI) { 
+            verdictClass = 'bg-gradient-to-r from-red-500 to-rose-600'; 
+            verdictIcon = 'fa-robot'; 
+        } else if (isEdited) { 
+            verdictClass = 'bg-gradient-to-r from-orange-500 to-amber-600'; 
+            verdictIcon = 'fa-pencil-alt'; 
+        }
+    }
+    
+    // Get uploader info with fallbacks
+    const uploadedBy = img.uploaded_by || 'Unknown';
+    const uploaderRole = img.uploader_role || 'User';
+    
+    // Determine role color class
+    let roleColorClass = 'text-gray-400';
+    if (uploaderRole === 'Superuser') {
+        roleColorClass = 'text-purple-400';
+    } else if (uploaderRole === 'Staff') {
+        roleColorClass = 'text-blue-400';
+    }
+    
+    return `
+        <div class="image-card bg-[#13223a] rounded-3xl overflow-hidden light-mode:bg-white light-mode:shadow-lg">
+            <a href="/image/${img.hashid}/">
+                <div class="relative">
+                    <img src="${img.image_url}" class="w-full h-64 object-cover" alt="${img.filename}">
+                    <div class="absolute top-4 right-4 px-4 py-1 text-xs font-bold rounded-2xl backdrop-blur-sm ${verdictClass} shadow-lg">
+                        <i class="fas ${verdictIcon} mr-1"></i> ${verdictText}
+                    </div>
+                    <div class="absolute bottom-4 left-4 right-4 flex gap-2">
+                        ${img.ai_score ? `
+                        <div class="score-badge px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/80 backdrop-blur-sm">
+                            <span class="ai-label text-red-400"><i class="fas fa-microchip"></i> AI:</span>
+                            <span class="score-value text-white">${img.ai_score.toFixed(1)}%</span>
+                        </div>` : ''
+                        }
+                        ${img.edit_score ? `
+                        <div class="score-badge px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/80 backdrop-blur-sm">
+                            <span class="edit-label text-orange-400"><i class="fas fa-user-edit"></i> Edit:</span>
+                            <span class="score-value text-white">${img.edit_score.toFixed(1)}%</span>
+                        </div>` : ''
+                        }
+                        ${!img.ai_score && !img.edit_score ? `
+                        <div class="score-badge px-3 py-1.5 rounded-xl text-xs bg-black/80 backdrop-blur-sm">
+                            <i class="fas fa-hourglass-half text-yellow-400"></i>
+                            <span class="text-gray-300 ml-1">Pending</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+            </a>
+            <div class="p-6">
+                <p class="font-semibold truncate text-lg text-gray-900 dark:text-white" title="${img.filename}">${img.filename.substring(0, 30)}${img.filename.length > 30 ? '...' : ''}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><i class="far fa-calendar-alt mr-1"></i> Uploaded ${img.uploaded_ago} ago</p>
+                ${img.uploaded_by ? `
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-user mr-1"></i> Uploaded by: ${uploadedBy}
+                    <span class="text-xs px-1 rounded ${roleColorClass}">(${uploaderRole})</span>
+                </p>
+                ` : ''}
+                <div class="mt-5 flex justify-between items-center">
+                  <a href="/delete-image/${img.hashid}/" 
+                    data-filename="${img.filename}"
+                    onclick="return confirm('Are you sure you want to delete ' + this.dataset.filename + '?\n\n⚠️ This action cannot be undone and will also delete all associated analyses.');"
+                    class="bg-red-600/30 hover:bg-red-600/50 text-red-400 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"><i class="fas fa-trash-alt"></i> Delete</a>
+                  ${img.has_analysis ? 
+                        `<a href="/image/${img.hashid}/" class="bg-emerald-600/90 hover:bg-emerald-600/50 text-emerald-300 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"><i class="fas fa-check-circle"></i> Analyzed</a>` :
+                        `<a href="/run-analysis/${img.hashid}/" class="bg-blue-600/90 hover:bg-blue-600/50 text-blue-300 px-4 py-2 rounded-xl text-sm transition flex items-center gap-2"><i class="fas fa-sync-alt"></i> Analyze</a>`
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+</script>
+{% endif %}
+
+{% endblock %}

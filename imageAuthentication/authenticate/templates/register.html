@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Forensix - Register{% endblock %}
+
+{% block extra_css %}
+<style> 
+  input[type="text"], input[type="email"], input[type="password"] {
+    background-color: #1f2a44;
+    border: 1px solid #4b5563;
+    color: #e5e7eb;
+    padding: 12px 16px;
+    border-radius: 12px;
+    width: 100%;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  body.light-mode input[type="text"],
+  body.light-mode input[type="email"],
+  body.light-mode input[type="password"] {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    color: #1f2937;
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+  }
+  
+  .errorlist {
+    color: #f87171;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    list-style: none;
+    padding: 0;
+  }
+  
+  body.light-mode .errorlist {
+    color: #dc2626;
+  }
+  
+  .register-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .register-card {
+    transition: all 0.3s ease;
+  }
+  
+  .register-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* Password toggle button light mode */
+  body.light-mode .toggle-password {
+    color: #9ca3af;
+  }
+  
+  body.light-mode .toggle-password:hover {
+    color: #374151;
+  }
+  
+  /* Form labels light mode */
+  body.light-mode label.text-gray-400 {
+    color: #6b7280;
+  }
+  
+  /* Border light mode */
+  body.light-mode .border-gray-700 {
+    border-color: #e5e7eb;
+  }
+  
+  /* Helper text light mode */
+  body.light-mode .text-gray-500 {
+    color: #9ca3af;
+  }
+  
+  body.light-mode .text-gray-400 {
+    color: #6b7280;
+  }
+  
+  /* Message alerts light mode */
+  body.light-mode .bg-red-500 {
+    background-color: #ef4444;
+  }
+  
+  body.light-mode .bg-emerald-500 {
+    background-color: #10b981;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+  <div class="bg-[#13223a] p-10 rounded-3xl w-full max-w-md shadow-2xl register-card light-mode:bg-white light-mode:shadow-xl">
+    
+    <div class="text-center mb-10">
+      <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-2xl mx-auto flex items-center justify-center text-4xl mb-4 shadow-lg">
+        🔍
+      </div>
+      <h1 class="text-4xl font-bold tracking-tight text-white light-mode:text-gray-900">Forensix</h1>
+      <p class="text-gray-400 light-mode:text-gray-600 mt-2">Create your account</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mb-6 p-4 rounded-2xl text-center text-sm {% if 'error' in message.tags %}bg-red-500{% else %}bg-emerald-500{% endif %} text-white">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" class="space-y-6">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 light-mode:text-gray-600 mb-2">First Name</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}
+            <div class="errorlist">{{ form.first_name.errors }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 light-mode:text-gray-600 mb-2">Last Name</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}
+            <div class="errorlist">{{ form.last_name.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-400 light-mode:text-gray-600 mb-2">Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <div class="errorlist">{{ form.email.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="pt-4 border-t border-gray-700 light-mode:border-gray-200 space-y-5">
+        <div>
+          <label class="block text-sm text-gray-400 light-mode:text-gray-600 mb-2">Password</label>
+          <div class="relative">
+            {{ form.password1 }}
+            <button type="button" onclick="togglePassword(this)" 
+                    class="toggle-password absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white light-mode:hover:text-gray-700 transition">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% if form.password1.errors %}
+            <div class="errorlist">{{ form.password1.errors }}</div>
+          {% endif %}
+          {% if form.password1.help_text %}
+            <p class="text-xs text-gray-500 light-mode:text-gray-500 mt-2">{{ form.password1.help_text|safe }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-400 light-mode:text-gray-600 mb-2">Confirm Password</label>
+          <div class="relative">
+            {{ form.password2 }}
+            <button type="button" onclick="togglePassword(this)" 
+                    class="toggle-password absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white light-mode:hover:text-gray-700 transition">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+            <div class="errorlist">{{ form.password2.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <button type="submit" 
+              class="w-full bg-teal-500 hover:bg-teal-600 transition py-4 rounded-3xl font-bold text-lg mt-6 text-white shadow-lg hover:shadow-xl">
+        Create Account
+      </button>
+    </form>
+
+    <p class="text-center mt-8 text-gray-400 light-mode:text-gray-600">
+      Already have an account? 
+      <a href="{% url 'login' %}" class="text-teal-400 hover:text-teal-300 light-mode:text-teal-600 light-mode:hover:text-teal-700 font-medium transition">
+        Login here
+      </a>
+    </p>
+  </div>
+</div>
+
+<script>
+  function togglePassword(btn) {
+    const input = btn.parentElement.querySelector('input');
+    const icon = btn.querySelector('i');
+    
+    if (input.type === "password") {
+      input.type = "text";
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = "password";
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+</script>
+{% endblock %}

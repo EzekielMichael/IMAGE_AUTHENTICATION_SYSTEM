@@ -1,0 +1,9 @@
+__pycache__/
+media/
+*.sqlite3
+*.db
+.env
+venv/
+*.pyc
+staticfiles/
+Image_models/

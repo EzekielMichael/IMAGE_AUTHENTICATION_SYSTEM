@@ -1,0 +1,35 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('image/<str:hash_id>/', views.image_detail, name='image_detail'),
+    path('api/image-ids/', views.get_image_ids_for_navigation, name='api_image_ids'),
+    path('analyze/<str:hash_id>/', views.run_analysis, name='run_analysis'),
+    path('run-analysis-all/', views.run_analysis_for_all_images, name='run_analysis_all'), #AI analys for all images
+    path('all-images/', views.all_images, name='all_images'),
+    path('toggle-scroll-mode/', views.get_pagination_mode, name='toggle_scroll_mode'),
+    path('delete-image/<str:image_id>/', views.delete_image, name='delete_image'),
+    path('bulk-delete-images/', views.bulk_delete_images, name='bulk_delete_images'),
+    path('ask-question/<str:hash_id>/', views.ask_question_api, name='ask_question_api'),
+    path('api/chat-history/<str:hash_id>/', views.get_chat_history, name='chat_history'),
+    path('analysis-status/<str:hash_id>/', views.get_analysis_status, name='analysis_status'),
+    path('delete-report/<str:report_hash_id>/', views.delete_specific_report, name='delete_report'),
+    path('login/', views.user_login, name='login'),
+    path('register/', views.register, name='register'),
+    path('activate/<uidb64>/<token>/', views.activate, name='activate'),
+    path('logout/', views.user_logout, name='logout'),
+    path('profile/', views.profile_view, name='profile'),
+    path('update-profile/', views.update_profile, name='update_profile'),
+    path('set-scroll-mode/', views.set_scroll_mode, name='set_scroll_mode'),
+    path('image/<str:hash_id>/report/', views.image_report_pdf, name='image_report_pdf'),
+    path('image/<str:hash_id>/report/generate/', views.generate_report, name='generate_report'),
+    path('report/<str:report_hash_id>/view-ajax/', views.view_saved_report_ajax, name='view_saved_report_ajax'),
+    path('report/<str:report_hash_id>/download/', views.download_saved_report, name='download_saved_report'),
+    path('my-reports/', views.my_all_reports, name='my_all_reports'),
+    path('shared-reports/', views.shared_reports, name='shared_reports'),
+    path('report/share/<str:report_hash_id>/', views.share_report, name='share_report'),
+    path('report/toggle-share/<str:report_hash_id>/', views.toggle_report_sharing, name='toggle_report_sharing'),
+    path('report/shared/<str:share_token>/', views.view_shared_report, name='view_shared_report'),
+    path('report/shared/<str:share_token>/view/', views.shared_report_view_count, name='shared_report_view_count'),
+] 

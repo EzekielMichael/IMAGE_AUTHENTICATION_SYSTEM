@@ -1,0 +1,7 @@
+Hi {{ user.first_name }},
+
+Please click on the link below to verify your email and activate your account:
+
+{{ protocol }}://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+If you did not create this account, please ignore this email.
