@@ -248,11 +248,13 @@ The deep learning analysis detects patterns indicating that the image is likely 
 
 ### 🏠 Home Page
 
-![Home Page](https://github.com/EzekielMichael/IMAGE_AUTHENTICATION_SYSTEM/blob/main/Screenshots/Screenshot%20From%202026-08-25%2018-17-38.png)
+![Home Page](Screenshots/Screenshot%20From%202026-08-25%2018-17-38.png)
+![Recent uploads](Screenshot%20From%202026-08-25%2018-20-47.png)
 
-### 🔐 User Login
+### 🔐 User Login you can use username and password or using Gmail
 
-![Login Page](screenshots/login.png)
+![Login Page](Screenshot%20From%202026-08-25%2018-17-53.png)
+![Gmail Login]()
 
 ### 🖼️ Image Upload
 
@@ -260,19 +262,19 @@ The deep learning analysis detects patterns indicating that the image is likely 
 
 ### 📊 Analysis Results
 
-![Analysis Results](screenshots/analysis_result.png)
+![Analysis Results](Screenshots/Screenshot%20From%202026-08-25%2018-22-01.png)
 
 ### 🔍 Manipulation Localization
 
-![Manipulation Localization](screenshots/manipulation_localization.png)
+![Manipulation Localization](Screenshot%20From%202026-08-25%2018-22-17.png)
 
 ### 🤖 AI Detection Result
 
-![AI Detection](screenshots/ai_detection.png)
+![AI Detection](Screenshots/Screenshot%20From%202026-08-25%2018-29-51.png)
 
-### 🧠 Analysis Chatbot
+### 🧠 Analysis Chatbot for AI image
 
-![Analysis Chatbot](screenshots/chatbot.png)
+![Analysis Chatbot](Screenshots/Screenshot%20From%202026-08-25%2018-33-11.png)
 
 ---
 
@@ -286,14 +288,14 @@ Make sure the following are installed:
 * pip
 * Git
 * PostgreSQL or SQLite
-* Virtual Environment
+* Anaconda Environment
 
 ---
 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/image-authentication-system.git
+git clone https://github.com/EzekielMichael/IMAGE_AUTHENTICATION_SYSTEM.git
 ```
 
 Move into the project directory:
@@ -391,7 +393,7 @@ python manage.py runserver
 Open:
 
 ```text
-http://127.0.0.1:8000/
+http://127.0.0.1:9000/
 ```
 
 ---
