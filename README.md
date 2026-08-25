@@ -253,7 +253,7 @@ The deep learning analysis detects patterns indicating that the image is likely 
 
 ### 🔐 User Login you can use username and password or using Gmail
 
-![Login Page](Sscreenshots/creenshot%20From%202026-08-25%2018-17-53.png)
+![Login Page](Screenshots/Screenshot%20From%202026-08-25%2018-17-53.png)
 ![Gmail Login](Screenshots/ScreenshotFrom2026-08-2520-04-48.png)
 
 ### 🖼️ Image Upload
