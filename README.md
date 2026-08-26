@@ -516,7 +516,7 @@ BSc in Cyber Security and Digital Forensics Engineering
 
 🔗 **GitHub:** https://github.com/EzekielMichael/IMAGE_AUTHENTICATION_SYSTEM/edit/main/README.md
 
-🔗 **LinkedIn:** [Add your LinkedIn URL]
+🔗 **LinkedIn:** www.linkedin.com/in/ezekiel-michael-93234a2bb
 
 ---
 
