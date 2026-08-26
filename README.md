@@ -514,7 +514,7 @@ BSc in Cyber Security and Digital Forensics Engineering
 
 📧 **Email:** [ezekielmichaeljuma1st@gmail.com](mailto:ezekielmichaeljuma1st@gmail.com)
 
-🔗 **GitHub:** https://github.com/EzekielMichael/IMAGE_AUTHENTICATION_SYSTEM/edit/main/README.md
+🔗 **GitHub:** https://github.com/EzekielMichael
 
 🔗 **LinkedIn:** www.linkedin.com/in/ezekiel-michael-93234a2bb
 
